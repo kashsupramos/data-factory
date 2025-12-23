@@ -81,6 +81,12 @@ def main():
         default=1.0,
         help='Delay between requests in seconds (default: 1.0)'
     )
+    parser.add_argument(
+        '--roles',
+        nargs='+',
+        default=["DESCRIPTIVE", "PROCEDURAL", "TEMPORAL", "TRANSACTIONAL"],
+        help='Role tags to include in Q&A generation (default: DESCRIPTIVE, PROCEDURAL, TEMPORAL, TRANSACTIONAL)'
+    )
     
     args = parser.parse_args()
     
@@ -231,12 +237,15 @@ def main():
     # ========================================
     # STEP 4: GENERATE QA
     # ========================================
+    qa_cmd = [
+        sys.executable,
+        str(qa_script),
+        str(run_dir),
+        "--roles"
+    ] + args.roles  # Pass selected roles to QA generator
+    
     success = run_command(
-        [
-            sys.executable,
-            str(qa_script),
-            str(run_dir)
-        ],
+        qa_cmd,
         "STEP 4: Generating QA pairs"
     )
     

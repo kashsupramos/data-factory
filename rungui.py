@@ -22,9 +22,10 @@ CLAUDEDATASETS_DIR = PROJECT_ROOT / "Claudedatasets"
 RUNS_DIR = PROJECT_ROOT / "AllDatasets" / "runs"
 
 
-def run_pipeline(url, max_pages, delay, progress=gr.Progress()):
+def run_pipeline(url, max_pages, delay, selected_roles, progress=gr.Progress()):
     """Run the complete pipeline with progress tracking"""
     
+    # Validation
     if not url or not url.startswith(('http://', 'https://')):
         return {
             status_box: "❌ Error: Please enter a valid URL (must start with http:// or https://)",
@@ -37,6 +38,23 @@ def run_pipeline(url, max_pages, delay, progress=gr.Progress()):
             download_tagged: None,
             download_qa: None
         }
+    
+    # Prepare command with role filter
+    cmd = [
+        sys.executable,
+        str(CLAUDEDATASETS_DIR / "pipeline.py"),
+        url,
+        "--max-pages", str(int(max_pages)),
+        "--delay", str(delay),
+        "--roles"
+    ]
+    
+    # Add selected roles as arguments
+    if selected_roles:
+        cmd.extend(selected_roles)
+    else:
+        # Default: use all roles if none selected
+        cmd.extend(["DESCRIPTIVE", "PROCEDURAL", "TEMPORAL", "TRANSACTIONAL"])
     
     # Update status
     progress(0, desc="🚀 Starting pipeline...")
@@ -312,6 +330,27 @@ with gr.Blocks(title="Data Factory") as demo:
                     info="Delay between requests (be respectful!)"
                 )
             
+            # Role selection section
+            gr.Markdown("### 🏷️ Select Data Types for Q&A Generation")
+            gr.Markdown("*Choose which types of content to generate Q&A from. This filters data BEFORE sending to Groq, saving time and cost!*")
+            
+            role_checkboxes = gr.CheckboxGroup(
+                choices=[
+                    "DESCRIPTIVE",
+                    "PROCEDURAL", 
+                    "TEMPORAL",
+                    "TRANSACTIONAL",
+                    "PROMOTIONAL",
+                    "CONTACT",
+                    "POLICY_LEGAL",
+                    "GENERAL"
+                ],
+                value=["DESCRIPTIVE", "PROCEDURAL", "TEMPORAL", "TRANSACTIONAL"],  # Default selection
+                label="Content Types",
+                info="📝 Descriptive: treatment info | 📋 Procedural: how-to guides | 📅 Temporal: schedules | 💰 Transactional: pricing",
+                type="value"  # Return just the values, not labels
+            )
+            
             run_button = gr.Button("🚀 Start Pipeline", variant="primary", size="lg")
             
             # Status section
@@ -384,7 +423,7 @@ with gr.Blocks(title="Data Factory") as demo:
     # Connect the run button
     run_button.click(
         fn=run_pipeline,
-        inputs=[url_input, max_pages_slider, delay_slider],
+        inputs=[url_input, max_pages_slider, delay_slider, role_checkboxes],  # Add role_checkboxes
         outputs=[
             status_box,
             logs_box,
@@ -421,7 +460,7 @@ if __name__ == "__main__":
     
     demo.launch(
         server_name="127.0.0.1",
-        server_port=7861,  # Using 7861 in case 7860 is in use
+        server_port=7862,  # Using 7862 in case others are in use
         share=False,
         show_error=True,
         inbrowser=True  # Auto-open browser

@@ -27,7 +27,7 @@ if sys.platform == 'win32':
         sys.stdout.reconfigure(encoding='utf-8')
 
 # Filenames (standardized across all runs)
-SLICED_FILENAME = "crawl_sliced.jsonl"
+TAGGED_FILENAME = "crawl_tagged.jsonl"  # Read from tagged instead of sliced
 QA_FILENAME = "qa_training.jsonl"
 
 # =========================
@@ -164,9 +164,9 @@ def load_blocks(input_path: Path):
     return blocks
 
 
-def generate_qa(run_dir: Path):
-    """Generate Q&A pairs from sliced data in a run directory"""
-    input_path = run_dir / SLICED_FILENAME
+def generate_qa(run_dir: Path, allowed_roles: list = None):
+    """Generate Q&A pairs from tagged data in a run directory"""
+    input_path = run_dir / TAGGED_FILENAME
     output_path = run_dir / QA_FILENAME
     
     # Validation
@@ -179,23 +179,41 @@ def generate_qa(run_dir: Path):
     if not GROQ_API_KEY:
         raise ValueError("GROQ_API_KEY not found in environment. Create a .env file with your API key.")
     
-    print(f"📂 Generating Q&A: {run_dir.name}")
-    print(f"📥 Reading from: {SLICED_FILENAME}")
-    print(f"🔑 Using Groq model: {GROQ_MODEL}")
+    # Default roles if none provided
+    if allowed_roles is None:
+        allowed_roles = ["DESCRIPTIVE", "PROCEDURAL", "TEMPORAL", "TRANSACTIONAL"]
     
-    # Load and filter blocks
+    print(f"📂 Generating Q&A: {run_dir.name}")
+    print(f"📥 Reading from: {TAGGED_FILENAME}")
+    print(f"🔑 Using Groq model: {GROQ_MODEL}")
+    print(f"🏷️  Filtering by roles: {', '.join(allowed_roles)}")
+    
+    # Load all blocks
     all_blocks = load_blocks(input_path)
     print(f"   Loaded {len(all_blocks)} blocks")
     
+    # Filter by role BEFORE anything else (THIS SAVES TIME AND MONEY!)
+    role_filtered_blocks = []
+    skipped_by_role = 0
+    for block in all_blocks:
+        block_role = block.get("role", "GENERAL")
+        if block_role in allowed_roles:
+            role_filtered_blocks.append(block)
+        else:
+            skipped_by_role += 1
+    
+    print(f"   ✅ Kept {len(role_filtered_blocks)} blocks with selected roles")
+    print(f"   ⏭️  Skipped {skipped_by_role} blocks (wrong role)")
+    
     # Group by (source_url, page_type)
     grouped = defaultdict(list)
-    for b in all_blocks:
+    for b in role_filtered_blocks:  # Use role-filtered blocks
         if not is_low_signal(b):
             key = (b["source_url"], b["page_type"])
             grouped[key].append(b)
     
-    print(f"   Filtered to {sum(len(v) for v in grouped.values())} high-quality blocks")
-    print(f"   Grouped into {len(grouped)} page contexts")
+    print(f"   ✅ After quality filter: {sum(len(v) for v in grouped.values())} high-quality blocks")
+    print(f"   📦 Grouped into {len(grouped)} page contexts")
     
     # Generate Q&A pairs
     total_qa_pairs = 0
@@ -240,20 +258,26 @@ def generate_qa(run_dir: Path):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python generate_qa_dataset.py <run_directory>")
-        print("\nExample:")
-        print("  python generate_qa_dataset.py AllDatasets/runs/run_2025-12-22_21-11-29_e1b874")
-        sys.exit(1)
+    import argparse
     
-    run_dir = Path(sys.argv[1]).resolve()
+    parser = argparse.ArgumentParser(description="Generate Q&A pairs from tagged data")
+    parser.add_argument("run_directory", help="Path to run directory")
+    parser.add_argument(
+        "--roles",
+        nargs="+",
+        default=["DESCRIPTIVE", "PROCEDURAL", "TEMPORAL", "TRANSACTIONAL"],
+        help="Role tags to include in Q&A generation"
+    )
+    
+    args = parser.parse_args()
+    run_dir = Path(args.run_directory).resolve()
     
     if not run_dir.exists() or not run_dir.is_dir():
         print(f"❌ Invalid run directory: {run_dir}")
         sys.exit(1)
     
     try:
-        generate_qa(run_dir)
+        generate_qa(run_dir, allowed_roles=args.roles)
     except Exception as e:
         print(f"❌ Error: {e}")
         import traceback
