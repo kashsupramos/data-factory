@@ -3,6 +3,10 @@ import re
 from pathlib import Path
 import sys
 
+if sys.platform == 'win32':
+    if sys.stdout.encoding != 'utf-8':
+        sys.stdout.reconfigure(encoding='utf-8')
+
 # Filenames (standardized across all runs)
 RAW_FILENAME = "crawl_raw.jsonl"
 CLEAN_FILENAME = "crawl_clean.jsonl"

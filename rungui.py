@@ -1,6 +1,6 @@
 """
 Data Factory GUI - Beautiful web interface for the pipeline
-Run with: python gui.py
+Run with: python rungui.py
 """
 
 import gradio as gr
@@ -34,6 +34,7 @@ def run_pipeline(url, max_pages, delay, progress=gr.Progress()):
             download_raw: None,
             download_clean: None,
             download_sliced: None,
+            download_tagged: None,
             download_qa: None
         }
     
@@ -79,17 +80,20 @@ def run_pipeline(url, max_pages, delay, progress=gr.Progress()):
             
             # Update progress based on pipeline steps
             if "STEP 1: Crawling" in line:
-                progress(0.1, desc="🕷️ Step 1/4: Crawling website...")
+                progress(0.08, desc="🕷️ Step 1/5: Crawling website...")
                 current_step = 1
             elif "STEP 2: Cleaning" in line:
-                progress(0.35, desc="🧹 Step 2/4: Cleaning data...")
+                progress(0.28, desc="🧹 Step 2/5: Cleaning data...")
                 current_step = 2
             elif "STEP 3: Slicing" in line:
-                progress(0.6, desc="✂️ Step 3/4: Slicing data...")
+                progress(0.48, desc="✂️ Step 3/5: Slicing data...")
                 current_step = 3
-            elif "STEP 4: Generating QA" in line:
-                progress(0.85, desc="🤖 Step 4/4: Generating Q&A pairs...")
+            elif "STEP 3.5: Tagging" in line:
+                progress(0.62, desc="🏷️ Step 4/5: Tagging blocks...")
                 current_step = 4
+            elif "STEP 4: Generating QA" in line:
+                progress(0.78, desc="🤖 Step 5/5: Generating Q&A pairs...")
+                current_step = 5
             elif "PIPELINE COMPLETE" in line:
                 progress(1.0, desc="✅ Complete!")
         
@@ -120,6 +124,7 @@ def run_pipeline(url, max_pages, delay, progress=gr.Progress()):
                 download_raw: files['raw'],
                 download_clean: files['clean'],
                 download_sliced: files['sliced'],
+                download_tagged: files['tagged'],
                 download_qa: files['qa'],
                 run_dir_state: run_dir
             }
@@ -132,6 +137,7 @@ def run_pipeline(url, max_pages, delay, progress=gr.Progress()):
                 download_raw: None,
                 download_clean: None,
                 download_sliced: None,
+                download_tagged: None,
                 download_qa: None
             }
             
@@ -144,6 +150,7 @@ def run_pipeline(url, max_pages, delay, progress=gr.Progress()):
             download_raw: None,
             download_clean: None,
             download_sliced: None,
+            download_tagged: None,
             download_qa: None
         }
 
@@ -154,6 +161,7 @@ def get_download_files(run_dir):
         'raw': None,
         'clean': None,
         'sliced': None,
+        'tagged': None,
         'qa': None
     }
     
@@ -168,6 +176,7 @@ def get_download_files(run_dir):
         'raw': 'crawl_raw.jsonl',
         'clean': 'crawl_clean.jsonl',
         'sliced': 'crawl_sliced.jsonl',
+        'tagged': 'crawl_tagged.jsonl',
         'qa': 'qa_training.jsonl'
     }
     
@@ -362,6 +371,9 @@ with gr.Blocks(title="Data Factory") as demo:
         
         with gr.Row():
             download_sliced = gr.File(label="✂️ Sliced Data (crawl_sliced.jsonl)", interactive=False)
+            download_tagged = gr.File(label="🏷️ Tagged Data (crawl_tagged.jsonl)", interactive=False)
+        
+        with gr.Row():
             download_qa = gr.File(label="🤖 Training Q&A (qa_training.jsonl)", interactive=False)
         
         # Sample Q&A viewer
@@ -381,6 +393,7 @@ with gr.Blocks(title="Data Factory") as demo:
             download_raw,
             download_clean,
             download_sliced,
+            download_tagged,
             download_qa,
             run_dir_state
         ]
@@ -408,7 +421,7 @@ if __name__ == "__main__":
     
     demo.launch(
         server_name="127.0.0.1",
-        server_port=7860,
+        server_port=7861,  # Using 7861 in case 7860 is in use
         share=False,
         show_error=True,
         inbrowser=True  # Auto-open browser

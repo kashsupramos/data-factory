@@ -52,7 +52,7 @@ GROQ_API_KEY=your_api_key_here
 
 **Option 1: GUI (Recommended for beginners)**
 ```bash
-python gui.py
+python rungui.py
 ```
 Then open your browser to http://127.0.0.1:7860 and use the web interface!
 

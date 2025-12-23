@@ -111,11 +111,12 @@ def main():
     crawling_script = script_dir / "crawling.py"
     cleaning_script = script_dir / "cleancrawling.py"
     slicing_script = script_dir / "slicingdata.py"
+    tagging_script = script_dir / "tag_sliced_blocks.py"
     qa_script = script_dir / "generate_qa_dataset.py"
     
     # Verify scripts exist
     missing_scripts = []
-    for script in [crawling_script, cleaning_script, slicing_script, qa_script]:
+    for script in [crawling_script, cleaning_script, slicing_script, tagging_script, qa_script]:
         if not script.exists():
             missing_scripts.append(script.name)
     
@@ -147,6 +148,7 @@ def main():
     crawl_raw = run_dir / "crawl_raw.jsonl"
     crawl_clean = run_dir / "crawl_clean.jsonl"
     crawl_sliced = run_dir / "crawl_sliced.jsonl"
+    crawl_tagged = run_dir / "crawl_tagged.jsonl"
     qa_training = run_dir / "qa_training.jsonl"
     
     # ========================================
@@ -207,6 +209,26 @@ def main():
     print(f"✅ Slicing complete: {crawl_sliced}")
     
     # ========================================
+    # STEP 3.5: TAG SLICED BLOCKS
+    # ========================================
+    crawl_tagged = run_dir / "crawl_tagged.jsonl"
+    
+    success = run_command(
+        [
+            sys.executable,
+            str(script_dir / "tag_sliced_blocks.py"),
+            str(run_dir)  # Pass run_dir, not individual files
+        ],
+        "STEP 3.5: Tagging sliced blocks"
+    )
+    
+    if not success or not crawl_tagged.exists():
+        print(f"❌ Tagging failed or {crawl_tagged.name} not created")
+        sys.exit(1)
+    
+    print(f"✅ Tagging complete: {crawl_tagged}")
+    
+    # ========================================
     # STEP 4: GENERATE QA
     # ========================================
     success = run_command(
@@ -235,11 +257,12 @@ def main():
     print(f"  1. {crawl_raw.name} - Raw scraped data")
     print(f"  2. {crawl_clean.name} - Cleaned data")
     print(f"  3. {crawl_sliced.name} - Sliced data")
-    print(f"  4. {qa_training.name} - Training QA pairs")
+    print(f"  4. {crawl_tagged.name} - Tagged data (with roles)")
+    print(f"  5. {qa_training.name} - Training QA pairs")
     
     # Show file sizes
     print(f"\n📊 File sizes:")
-    for file in [crawl_raw, crawl_clean, crawl_sliced, qa_training]:
+    for file in [crawl_raw, crawl_clean, crawl_sliced, crawl_tagged, qa_training]:
         if file.exists():
             size_kb = file.stat().st_size / 1024
             print(f"  {file.name}: {size_kb:.1f} KB")

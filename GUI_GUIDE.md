@@ -9,7 +9,7 @@ pip install gradio
 
 ### 2. Run the GUI
 ```bash
-python gui.py
+python rungui.py
 ```
 
 ### 3. Open Your Browser
@@ -126,7 +126,7 @@ Delay: 1.5-2.0s
 ## 🔧 Advanced Usage
 
 ### Running on a Server:
-Edit `gui.py` line with `demo.launch()`:
+Edit `rungui.py` line with `demo.launch()`:
 ```python
 demo.launch(
     server_name="0.0.0.0",  # Allow external access
