@@ -50,6 +50,13 @@ GROQ_API_KEY=your_api_key_here
 
 ### Run the Pipeline
 
+**Option 1: GUI (Recommended for beginners)**
+```bash
+python gui.py
+```
+Then open your browser to http://127.0.0.1:7860 and use the web interface!
+
+**Option 2: Command Line**
 ```bash
 cd Claudedatasets
 python pipeline.py https://example.com --max-pages 50
@@ -96,7 +103,10 @@ AllDatasets/runs/run_2025-12-23_08-05-26_983378/
 
 ## 🛠️ Current Features
 
+- ✅ **Beautiful Web GUI** (no command line needed!)
 - ✅ Automated 4-step pipeline (Crawl → Clean → Slice → Generate Q&A)
+- ✅ Real-time progress tracking
+- ✅ One-click downloads
 - ✅ Groq API integration (llama-3.1-8b-instant)
 - ✅ Configurable crawl limits and delays
 - ✅ Smart content slicing (preserves prices, measurements, percentages)

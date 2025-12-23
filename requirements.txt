@@ -4,6 +4,7 @@ beautifulsoup4>=4.12.0
 pandas>=2.0.0
 python-dotenv>=1.0.0
 tqdm>=4.66.0
+gradio>=4.0.0
 
 # Note: You'll need a Groq API key
 # Get one at: https://console.groq.com/
